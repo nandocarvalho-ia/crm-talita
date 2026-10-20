@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --chat-fundo: 0.965 0.008 220; --chat-ponto: 0.92 0.012 220;
+  --balao-eu: 0.93 0.05 190; --balao-eu-texto: 0.27 0.05 205;
+  --balao-contato: 0.995 0.002 220; --balao-contato-texto: 0.24 0.02 215;
+  --chat-lido: 0.6 0.13 230;
+}
+html, body, #root { height: 100%; }
+body { @apply text-tinta antialiased; background: #DCE9EF; }
+/* fundo da marca: foto do negócio (public/img/fundo.webp), fixa atrás do vidro.
+   Sem foto (ou enquanto carrega) fica o degradê — ADAPTE às cores claras da marca (ver references/visual.md). */
+.ceu { background: url('/img/fundo.webp') center 70% / cover no-repeat fixed, linear-gradient(180deg, #B9D9EF 0%, #DCE9EF 45%, #E9EFEA 100%); }
+/* no celular não existe o painel de vidro por trás do texto: clareia a foto para manter a leitura */
+@media (max-width: 767px) {
+  .ceu { background: linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.4) 45%, rgba(255,255,255,.2) 100%),
+                     url('/img/fundo.webp') center 70% / cover no-repeat fixed, #CFE6F3; }
+}
+.tela-chat { background-color: oklch(var(--chat-fundo));
+  background-image: radial-gradient(oklch(var(--chat-ponto)) 1px, transparent 1px); background-size: 22px 22px; }
+.balao-eu { background: oklch(var(--balao-eu)); color: oklch(var(--balao-eu-texto)); }
+.balao-contato { background: oklch(var(--balao-contato)); color: oklch(var(--balao-contato-texto)); }
+.lido { color: oklch(var(--chat-lido)); }
+.numero { font-variant-numeric: tabular-nums; }
+
+@layer components {
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed; }
+.btn-primario { @apply btn bg-petroleo text-white hover:bg-petroleo-700; }
+.btn-sol { @apply btn bg-sol text-noite hover:bg-sol-300; }
+.btn-sec { @apply btn bg-white/90 text-tinta ring-1 ring-linha hover:bg-white; }
+.btn-perigo { @apply btn bg-alerta-100 text-alerta ring-1 ring-alerta/20 hover:bg-red-100; }
+.campo { @apply w-full rounded-xl border border-black/10 bg-white/95 px-3 py-2 text-sm outline-none focus:border-petroleo focus:ring-2 focus:ring-petroleo/20; }
+.rotulo { @apply mb-1 block text-[11px] font-bold uppercase tracking-wider text-apagado; }
+/* cartão de vidro */
+.cartao { @apply rounded-[20px] bg-white/80 shadow-card ring-1 ring-white/90 backdrop-blur-md; }
+/* camada de vidro mais leve (colunas, painéis) */
+.vidro { @apply rounded-[20px] bg-white/45 ring-1 ring-white/80 backdrop-blur-md; }
+.chip { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold; }
+.aba { @apply inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition; }
+.aba-on { @apply aba bg-noite text-white; }
+.aba-off { @apply aba bg-white/75 text-tinta ring-1 ring-white/90 hover:bg-white; }
+.titulo-tela { @apply font-display text-2xl font-semibold tracking-tight; }
+}
+
