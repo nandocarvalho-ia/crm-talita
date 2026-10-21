@@ -166,6 +166,8 @@ export default function VisaoGeral() {
   const qc = useQueryClient();
   const [dias, setDias] = useState(30);
   const [aberto, setAberto] = useState<string | null>(null);
+  // mesmo cache do cartão "Agente no ar" do menu (App.tsx): o chip mostra WhatsApp desconectado também
+  const { data: statusAgente } = useQuery({ queryKey: ['status-agente'], queryFn: async () => (await supabase.rpc('crm_status_agente')).data as any, refetchInterval: 60_000 });
   const { data: d, isLoading, error } = useQuery({
     queryKey: ['dashboard', dias],
     queryFn: async () => { const { data, error } = await supabase.rpc('crm_dashboard', { p_dias: dias }); if (error) throw error; return data as Dash; },
@@ -200,6 +202,7 @@ export default function VisaoGeral() {
   const leads = n(a.leads);
   const pctConta = leads ? (n(a.contratos) / leads) * 100 : null;
   const falhaRecente = d.atividade.ultima_falha_ia && Date.now() - new Date(d.atividade.ultima_falha_ia).getTime() < 2 * 3600_000;
+  const whatsOff = !!statusAgente?.whatsapp && statusAgente.whatsapp.status !== 'connected';
   const media = d.por_dia.length ? leads / d.por_dia.length : 0;
   const totalOrigem = d.origem.reduce((s, o) => s + o.n, 0) || 1;
   const pResp = d.resposta.respostas ? (d.resposta.ate_1min / d.resposta.respostas) * 100 : null;
@@ -262,7 +265,9 @@ export default function VisaoGeral() {
             <div className="flex w-full flex-col gap-3 rounded-[18px] bg-white/80 p-4 ring-1 ring-white/95 backdrop-blur-md md:w-[256px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-semibold text-noite-600">Agente de IA</span>
-                {falhaRecente
+                {whatsOff
+                  ? <span className="chip bg-alerta-100 text-[#93321C]"><span className="h-1.5 w-1.5 rounded-full bg-alerta" />WhatsApp desconectado</span>
+                  : falhaRecente
                   ? <span className="chip bg-alerta-100 text-[#93321C]"><span className="h-1.5 w-1.5 rounded-full bg-alerta" />Falhou há {ha(d.atividade.ultima_falha_ia)}</span>
                   : <span className="chip bg-menta-100 text-menta-700"><span className="h-1.5 w-1.5 rounded-full bg-menta-600" />Funcionando</span>}
               </div>
