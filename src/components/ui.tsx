@@ -5,35 +5,35 @@ import { createPortal } from 'react-dom';
 export const EMPRESA = 'TCF Advogados';
 export const EMPRESA_SUB = 'Dra. Talita';
 
-/** Símbolo neutro de reserva (balança), usado enquanto não chega a logo do escritório (pendência 19). */
-export function SimboloMarca({ className = 'h-9 w-9' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 34 34" className={className} aria-hidden="true">
-      <rect width="34" height="34" rx="9" fill="#0E5E6B" />
-      <g fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 9v16.5M12 26h10M8.5 11.5h17" />
-        <path d="M9 11.5 6 19M9 11.5l3 7.5M25 11.5 22 19M25 11.5l3 7.5" />
-        <path d="M5.4 19h7.2a3.6 3.6 0 0 1-7.2 0ZM21.4 19h7.2a3.6 3.6 0 0 1-7.2 0Z" />
-      </g>
-      <circle cx="17" cy="8.4" r="1.5" fill="#F2B01E" />
-    </svg>
-  );
-}
-
-/** Logo oficial do cliente: public/marca/logo.png (PNG transparente, sem bordas — ferramentas/preparar_marca.py).
- *  Sem o arquivo, mostra o símbolo de reserva + nome do escritório. */
+/** Logo oficial do escritório: selo circular da TCF em public/marca/logo.png (fundo verde só dentro do círculo,
+ *  transparente fora; original em crm/marca-origem/). O selo já tem fundo próprio e serve em fundo claro ou escuro,
+ *  por isso não há versão branca. O nome fica ao lado (compacta: topo do celular) ou abaixo (menu e login).
+ *  Sem o arquivo, um disco verde com "TCF" em dourado ocupa o lugar do selo. */
 export function Marca({ compacta = false }: { compacta?: boolean }) {
   const [semLogo, setSemLogo] = useState(false);
-  if (semLogo) return (
+  const tam = compacta ? 'h-10 w-10' : 'h-[76px] w-[76px]';
+  const selo = semLogo
+    ? <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-full bg-petroleo font-display font-semibold tracking-[.2em] text-sol-300 ring-2 ring-sol-300 ${tam} ${compacta ? 'text-[10px]' : 'text-[15px]'}`}>TCF</span>
+    : <img src="/marca/logo.png" alt="" width={compacta ? 40 : 76} height={compacta ? 40 : 76} onError={() => setSemLogo(true)}
+        className={`shrink-0 rounded-full drop-shadow-[0_2px_6px_rgba(15,29,25,.18)] ${tam}`} />;
+  if (compacta) return (
     <div className="flex items-center gap-2.5">
-      <SimboloMarca className={compacta ? 'h-9 w-9' : 'h-10 w-10'} />
+      {selo}
       <div className="leading-tight">
         <div className="whitespace-nowrap font-display text-[15px] font-semibold tracking-tight">{EMPRESA}</div>
         <div className="text-xs font-semibold text-noite-600">{EMPRESA_SUB}</div>
       </div>
     </div>
   );
-  return <img src="/marca/logo.png" alt={`${EMPRESA} · ${EMPRESA_SUB}`} onError={() => setSemLogo(true)} className={compacta ? 'h-10 w-auto' : 'h-[76px] w-auto'} />;
+  return (
+    <div className="flex flex-col items-center gap-2 text-center">
+      {selo}
+      <div className="leading-tight">
+        <div className="whitespace-nowrap font-display text-[16px] font-semibold tracking-tight">{EMPRESA}</div>
+        <div className="text-[13px] font-semibold text-noite-600">{EMPRESA_SUB}</div>
+      </div>
+    </div>
+  );
 }
 
 /** Cabeçalho padrão das telas: título, frase de apoio e ações à direita. */

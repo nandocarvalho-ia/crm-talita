@@ -3,20 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --chat-fundo: 0.965 0.008 220; --chat-ponto: 0.92 0.012 220;
-  --balao-eu: 0.93 0.05 190; --balao-eu-texto: 0.27 0.05 205;
-  --balao-contato: 0.995 0.002 220; --balao-contato-texto: 0.24 0.02 215;
+  /* chat em tons do verde da marca (o azul do "lido" continua o do WhatsApp) */
+  --chat-fundo: 0.965 0.008 150; --chat-ponto: 0.92 0.012 150;
+  --balao-eu: 0.93 0.04 160; --balao-eu-texto: 0.27 0.04 165;
+  --balao-contato: 0.995 0.002 150; --balao-contato-texto: 0.24 0.02 165;
   --chat-lido: 0.6 0.13 230;
 }
 html, body, #root { height: 100%; }
-body { @apply text-tinta antialiased; background: #DCE9EF; }
+body { @apply text-tinta antialiased; background: #E9EEE6; }
 /* fundo da marca: foto do negócio (public/img/fundo.webp), fixa atrás do vidro.
-   Sem foto (ou enquanto carrega) fica o degradê — ADAPTE às cores claras da marca (ver references/visual.md). */
-.ceu { background: url('/img/fundo.webp') center 70% / cover no-repeat fixed, linear-gradient(180deg, #B9D9EF 0%, #DCE9EF 45%, #E9EFEA 100%); }
+   Sem foto (ou enquanto carrega) fica o degradê suave da TCF: verde muito claro no alto, creme embaixo. */
+.ceu { background: url('/img/fundo.webp') center 70% / cover no-repeat fixed, linear-gradient(180deg, #D5E3DA 0%, #E9EEE6 45%, #F4EFE0 100%); }
 /* no celular não existe o painel de vidro por trás do texto: clareia a foto para manter a leitura */
 @media (max-width: 767px) {
   .ceu { background: linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.4) 45%, rgba(255,255,255,.2) 100%),
-                     url('/img/fundo.webp') center 70% / cover no-repeat fixed, #CFE6F3; }
+                     url('/img/fundo.webp') center 70% / cover no-repeat fixed, linear-gradient(180deg, #D5E3DA 0%, #EDF0E8 55%, #F4EFE0 100%); }
 }
 .tela-chat { background-color: oklch(var(--chat-fundo));
   background-image: radial-gradient(oklch(var(--chat-ponto)) 1px, transparent 1px); background-size: 22px 22px; }

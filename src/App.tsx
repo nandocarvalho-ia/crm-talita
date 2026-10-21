@@ -54,15 +54,15 @@ function CartaoAgente() {
   const { data, falha, whatsOff, whatsTexto, sem } = useStatusAgente();
   const ruim = falha || whatsOff;
   return (
-    <div className={`flex flex-col gap-2.5 rounded-[18px] p-4 text-white ${ruim ? 'bg-gradient-to-br from-[#8A3B1E] to-[#5E2413]' : 'bg-gradient-to-br from-petroleo to-[#0A3F48]'}`}>
+    <div className={`flex flex-col gap-2.5 rounded-[18px] p-4 text-white ${ruim ? 'bg-gradient-to-br from-[#8A3B1E] to-[#5E2413]' : 'bg-gradient-to-br from-petroleo to-noite'}`}>
       <div className="flex items-center gap-2 text-[13px] font-bold">
-        <span className={`h-2.5 w-2.5 rounded-full ${ruim ? 'bg-sol shadow-[0_0_0_4px_rgba(242,176,30,.3)]' : 'bg-[#6FE3B8] shadow-[0_0_0_4px_rgba(111,227,184,.25)]'}`} />
+        <span className={`h-2.5 w-2.5 rounded-full ${ruim ? 'bg-sol-300 shadow-[0_0_0_4px_rgba(214,188,108,.3)]' : 'bg-[#6FE3B8] shadow-[0_0_0_4px_rgba(111,227,184,.25)]'}`} />
         {whatsOff ? whatsTexto : falha ? 'A IA falhou há pouco' : 'Agente no ar'}
       </div>
       <div className="font-display text-[16px] font-medium leading-snug">
         {whatsOff ? 'O agente não recebe nem envia mensagens' : falha ? 'Confira os créditos da OpenAI' : 'Atendendo no WhatsApp a qualquer hora'}
       </div>
-      <div className="text-[13px] leading-snug text-[#CFE6E9]">
+      <div className="text-[13px] leading-snug text-[#D3E2DA]">
         {whatsOff ? (admin ? 'Conecte o celular pelo QR code.' : 'Avise o administrador do CRM.')
           : data == null ? '…' : sem ? `${sem} ${sem === 1 ? 'lead está' : 'leads estão'} sem resposta.` : 'Nenhum lead ficou sem resposta nas últimas 24 h.'}
       </div>
@@ -102,7 +102,7 @@ function MenuLateral() {
       <div className="flex justify-center px-2 pb-4"><Marca /></div>
       {itens.map(({ to, rotulo, icone: I, badge }) => (
         <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) =>
-          `flex h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] transition ${isActive ? 'bg-white font-bold text-tinta shadow-[0_2px_10px_rgba(14,60,80,.08)] [&>svg]:text-petroleo' : 'font-semibold text-noite-600 hover:bg-white/60'}`}>
+          `flex h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] transition ${isActive ? 'bg-white font-bold text-tinta shadow-[0_2px_10px_rgba(20,45,38,.08)] [&>svg]:text-petroleo' : 'font-semibold text-noite-600 hover:bg-white/60'}`}>
           <I className="h-5 w-5" /><span className="flex-1">{rotulo}</span><Badge n={badge} />
         </NavLink>
       ))}

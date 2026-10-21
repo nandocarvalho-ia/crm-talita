@@ -61,7 +61,7 @@ function Anel({ pct, cor, tamanho = 48, espessura = 5, children }: { pct: number
   return (
     <div className="relative shrink-0" style={{ width: tamanho, height: tamanho }}>
       <svg width={tamanho} height={tamanho} viewBox={`0 0 ${tamanho} ${tamanho}`} aria-hidden="true">
-        <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" stroke="#DCE8EC" strokeWidth={espessura} />
+        <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" stroke="#E1E9E4" strokeWidth={espessura} />
         {pct != null && pct > 0 && <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" stroke={cor} strokeWidth={espessura} strokeLinecap="round"
           strokeDasharray={`${Math.max(0.5, Math.min(100, pct)) / 100 * c} ${c}`} transform={`rotate(-90 ${tamanho / 2} ${tamanho / 2})`} />}
       </svg>
@@ -76,6 +76,8 @@ function FotoDestaque() {
   return (
     <>
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-petroleo via-petroleo-700 to-noite" />
+      {/* detalhe dourado da marca (só aparece sem a foto) */}
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(214,188,108,.20),transparent_55%)]" />
       {!semFoto && <img src="/img/destaque.webp" alt="" aria-hidden="true" onError={() => setSemFoto(true)} className="absolute inset-0 h-full w-full object-cover object-[center_62%]" />}
       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-noite/55 via-noite/20 to-transparent" />
     </>
@@ -96,10 +98,10 @@ function GraficoDia({ pontos }: { pontos: { dia: string; n: number }[] }) {
     <div>
       <div className="relative mt-8 h-[150px]" onMouseLeave={() => setI(null)}>
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
-          <defs><linearGradient id="vg-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#0E5E6B" stopOpacity=".28" /><stop offset="1" stopColor="#0E5E6B" stopOpacity="0" /></linearGradient></defs>
-          <path d={`M0 ${H * 0.2}H${W}M0 ${H * 0.5}H${W}M0 ${H * 0.8}H${W}`} stroke="rgba(11,34,41,.07)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <defs><linearGradient id="vg-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#1F3630" stopOpacity=".28" /><stop offset="1" stopColor="#1F3630" stopOpacity="0" /></linearGradient></defs>
+          <path d={`M0 ${H * 0.2}H${W}M0 ${H * 0.5}H${W}M0 ${H * 0.8}H${W}`} stroke="rgba(15,29,25,.07)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           <path d={area} fill="url(#vg-area)" />
-          <path d={linha} fill="none" stroke="#0E5E6B" strokeWidth="2.2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <path d={linha} fill="none" stroke="#1F3630" strokeWidth="2.2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         </svg>
         <div className="absolute inset-0 flex">
           {pontos.map((p, k) => (
@@ -234,9 +236,9 @@ export default function VisaoGeral() {
           <div className="relative flex flex-col gap-4 p-4 md:min-h-[256px] md:flex-row md:justify-between md:gap-6 md:p-6">
             <div className="flex flex-col justify-between gap-4">
               <div>
-                <div className="text-[15px] font-semibold text-white/90 [text-shadow:0_1px_8px_rgba(10,32,73,.5)]">{saudacao()}{nome ? `, ${nome}` : ''}</div>
-                <p className="mt-1 font-display text-[24px] font-medium leading-tight text-white [text-shadow:0_2px_14px_rgba(10,32,73,.45)] md:text-[30px]">
-                  {leads ? <><span className="text-[#FFE08A]">{fmt(leads)} {leads === 1 ? 'lead chegou' : 'leads chegaram'}</span><br />nos últimos {dias} dias</>
+                <div className="text-[15px] font-semibold text-white/90 [text-shadow:0_1px_8px_rgba(8,20,16,.5)]">{saudacao()}{nome ? `, ${nome}` : ''}</div>
+                <p className="mt-1 font-display text-[24px] font-medium leading-tight text-white [text-shadow:0_2px_14px_rgba(8,20,16,.45)] md:text-[30px]">
+                  {leads ? <><span className="text-[#E3CC85]">{fmt(leads)} {leads === 1 ? 'lead chegou' : 'leads chegaram'}</span><br />nos últimos {dias} dias</>
                     : <>Ainda não chegaram leads<br />nos últimos {dias} dias</>}
                 </p>
               </div>
@@ -251,7 +253,7 @@ export default function VisaoGeral() {
                     <div className="flex gap-1.5"><span className="w-[3px] rounded bg-sol" /><div><div className="text-[11px] text-apagado">{coluna('com_consultor')}</div><div className="numero text-sm font-bold">{fmt(n(a.com_consultor))}</div></div></div>
                   </div>
                 </div>
-                <Anel pct={pctConta} cor="#0E5E6B" tamanho={84} espessura={8}>
+                <Anel pct={pctConta} cor="#1F3630" tamanho={84} espessura={8}>
                   <span className="font-display text-[17px] font-semibold">{pctConta == null ? '—' : `${Math.round(pctConta)}%`}</span>
                   <span className="text-center text-[10px] leading-[1.15] text-apagado">{DOC.anel[0]}<br />{DOC.anel[1]}</span>
                 </Anel>
@@ -312,7 +314,7 @@ export default function VisaoGeral() {
                   <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${ic.fundo}`}><ic.icone className={`h-[18px] w-[18px] ${ic.cor}`} /></span>
                   <div className="flex flex-1 flex-col gap-1.5">
                     <div className="flex justify-between text-[13px]"><span className="font-semibold">{o.origem === 'nao_informado' ? 'Não informado' : rotOpcao('origem_lead', o.origem)}</span><b className="numero">{fmt(o.n)}</b></div>
-                    <div className="h-1.5 rounded-full bg-[#E7EEF0]"><div className="h-1.5 rounded-full bg-petroleo" style={{ width: `${Math.max(3, (o.n / totalOrigem) * 100)}%` }} /></div>
+                    <div className="h-1.5 rounded-full bg-[#E6ECE8]"><div className="h-1.5 rounded-full bg-petroleo" style={{ width: `${Math.max(3, (o.n / totalOrigem) * 100)}%` }} /></div>
                   </div>
                 </div>
               );
@@ -366,9 +368,9 @@ export default function VisaoGeral() {
                         <ArrowRight className="hidden h-3.5 w-5 text-petroleo-300 sm:block" /><ArrowDown className="h-3.5 w-3.5 text-petroleo-300 sm:hidden" />
                       </div>
                     )}
-                    <div className={`flex flex-1 items-center gap-3 rounded-2xl p-3 sm:min-w-0 sm:flex-col sm:items-start sm:gap-2 ${ultimo ? 'bg-petroleo text-white' : 'bg-white shadow-[0_2px_10px_rgba(14,60,80,.07)]'}`}>
+                    <div className={`flex flex-1 items-center gap-3 rounded-2xl p-3 sm:min-w-0 sm:flex-col sm:items-start sm:gap-2 ${ultimo ? 'bg-petroleo text-white' : 'bg-white shadow-[0_2px_10px_rgba(20,45,38,.07)]'}`}>
                       <j.icone className={`h-[22px] w-[22px] shrink-0 ${j.cor}`} />
-                      <span className={`flex-1 text-xs font-semibold leading-tight sm:text-[11px] ${ultimo ? 'text-[#CFE6E9]' : 'text-apagado'}`}>{j.rotulo}</span>
+                      <span className={`flex-1 text-xs font-semibold leading-tight sm:text-[11px] ${ultimo ? 'text-[#D3E2DA]' : 'text-apagado'}`}>{j.rotulo}</span>
                       <span className="numero font-display text-[22px] font-semibold leading-none">{fmt(j.v)}</span>
                     </div>
                   </div>

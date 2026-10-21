@@ -39,7 +39,7 @@ function Card({ l, onAbrir }: { l: Lead; onAbrir: () => void }) {
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes} onClick={onAbrir}
-      className={`cursor-pointer rounded-[14px] bg-white p-3 text-left shadow-[0_2px_8px_rgba(14,60,80,.07)] transition hover:shadow-[0_0_0_2px_#0E5E6B,0_8px_20px_rgba(14,60,80,.14)] ${isDragging ? 'z-50 opacity-80 shadow-xl' : ''}`}>
+      className={`cursor-pointer rounded-[14px] bg-white p-3 text-left shadow-[0_2px_8px_rgba(20,45,38,.07)] transition hover:shadow-[0_0_0_2px_#1F3630,0_8px_20px_rgba(20,45,38,.14)] ${isDragging ? 'z-50 opacity-80 shadow-xl' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-sm font-bold">{l.nome || tel(l.telefone)}</div>
