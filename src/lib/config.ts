@@ -14,7 +14,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
     { chave: 'atende_sabado', rotulo: 'Sábado conta como horário da Dra.', tipo: 'simnao' },
     { chave: 'feriados', rotulo: 'Feriados (DD/MM, separados por vírgula)', ajuda: 'Ex.: 25/12, 01/01. Nesses dias a IA fica em plantão.', tipo: 'feriados' },
     { chave: 'prefixo_plantao', rotulo: 'Linha antes das mensagens do plantão (até 60 letras; vazio = nenhuma)', ajuda: 'Ex.: Atendimento · Dra. Talita', tipo: 'texto' },
-    { chave: 'nome_agente', rotulo: 'Nome com que a IA se apresenta (vazio = "atendimento do escritório TCF Advogados")', tipo: 'texto' },
+    { chave: 'nome_agente', rotulo: 'Nome da atendente virtual (vazio = "Clara")', tipo: 'texto' },
   ] },
   { titulo: 'Valores do caso', apoio: 'Valor já pago pelo lote. O texto do prompt também cita o valor mínimo: se mudar aqui, confira o roteiro.', itens: [
     { chave: 'valor_minimo', rotulo: 'Abaixo deste valor pago (R$) o caso não é atendido', tipo: 'reais' },
