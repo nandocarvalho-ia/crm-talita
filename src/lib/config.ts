@@ -19,7 +19,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
   { titulo: 'Valores do caso', apoio: 'Valor já pago pelo lote. O texto do prompt também cita o valor mínimo: se mudar aqui, confira o roteiro.', itens: [
     { chave: 'valor_minimo', rotulo: 'Abaixo deste valor pago (R$) o caso não é atendido', tipo: 'reais' },
     { chave: 'valor_prioridade', rotulo: 'Abaixo deste valor pago (R$) o lead é prioridade baixa (1 follow-up)', tipo: 'reais' },
-    { chave: 'aviso_valor_alto', rotulo: 'A partir deste valor pago (R$) a Dra. recebe aviso (vazio = não avisa)', tipo: 'reais_opcional' },
+    { chave: 'aviso_valor_alto', rotulo: 'A partir deste valor pago (R$) a Dra. recebe aviso quando falta só o contrato (vazio = não avisa)', ajuda: 'O aviso sai uma vez, depois que a IA explicou o caso e pediu o contrato, com a ficha e o resumo do lead. Também marca a prioridade alta.', tipo: 'reais_opcional' },
   ] },
   { titulo: 'Follow-up', itens: [
     { chave: 'janela_inicio', rotulo: 'Não enviar antes de', tipo: 'hora' },
