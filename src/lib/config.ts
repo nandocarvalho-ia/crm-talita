@@ -33,6 +33,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
     { chave: 'notificar_telefones', rotulo: 'Quem recebe os avisos ("lead precisa de você", cliente escreveu, aviso silencioso)', tipo: 'telefones' },
     { chave: 'telefones_teste', rotulo: 'Números de teste (conversam com a IA como lead, mesmo sendo da equipe)', tipo: 'telefones' },
     { chave: 'telefones_internos', rotulo: 'Números da equipe que nunca viram lead (além dos que recebem aviso)', tipo: 'telefones' },
+    { chave: 'delete_liberado', rotulo: '/delete zera a conversa de qualquer número (fase de testes)', ajuda: 'Desligue antes de ir ao ar: com "não", só os números de teste podem usar /delete.', tipo: 'simnao' },
   ] },
   { titulo: 'Sistema', itens: [
     { chave: 'fuso', rotulo: 'Fuso horário', ajuda: 'Ex.: America/Sao_Paulo', tipo: 'texto' },
@@ -53,7 +54,7 @@ export const CONFIG_ROTULOS: Record<string, string> = {
 export function validarConfig(chave: string, bruto: string): string | null {
   const v = bruto.trim();
   if (['janela_inicio', 'janela_fim', 'horario_humano_inicio', 'horario_humano_fim'].includes(chave) && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(v)) return 'Use o formato HH:MM (ex.: 08:00).';
-  if (['enviar_domingo', 'atende_sabado'].includes(chave) && !['true', 'false'].includes(v)) return 'Escolha sim ou não.';
+  if (['enviar_domingo', 'atende_sabado', 'delete_liberado'].includes(chave) && !['true', 'false'].includes(v)) return 'Escolha sim ou não.';
   if (chave.startsWith('esforco_') && !['minimal', 'low', 'medium', 'high'].includes(v)) return 'Escolha um dos níveis da lista.';
   if (chave === 'recontato_dias' && !/^[0-9]{1,3}$/.test(v)) return 'Use um número de dias (até 3 dígitos).';
   if (['turnos_retomar', 'turnos_avisar'].includes(chave) && !/^([3-9]|[1-3][0-9])$/.test(v)) return 'Use um número de 3 a 39.';
