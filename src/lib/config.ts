@@ -12,7 +12,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
     { chave: 'horario_humano_inicio', rotulo: 'A Dra. atende a partir de', tipo: 'hora' },
     { chave: 'horario_humano_fim', rotulo: 'A Dra. atende até', tipo: 'hora' },
     { chave: 'atende_sabado', rotulo: 'Sábado conta como horário da Dra.', tipo: 'simnao' },
-    { chave: 'feriados', rotulo: 'Feriados (DD/MM, separados por vírgula)', ajuda: 'Ex.: 25/12, 01/01. Nesses dias a IA fica em plantão.', tipo: 'feriados' },
+    { chave: 'feriados', rotulo: 'Dias extras sem atendimento (DD/MM, separados por vírgula)', ajuda: 'Feriados nacionais, de SP e de Franca (inclusive Carnaval, Sexta-feira Santa e Corpus Christi) já são automáticos. Use aqui só dias a mais, ex.: 24/12, 31/12.', tipo: 'feriados' },
     { chave: 'prefixo_plantao', rotulo: 'Linha antes das mensagens do plantão (até 60 letras; vazio = nenhuma)', ajuda: 'Ex.: Atendimento · Dra. Talita', tipo: 'texto' },
     { chave: 'nome_agente', rotulo: 'Nome da atendente virtual (vazio = "Clara")', tipo: 'texto' },
   ] },
@@ -24,6 +24,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
   { titulo: 'Follow-up', itens: [
     { chave: 'janela_inicio', rotulo: 'Não enviar antes de', tipo: 'hora' },
     { chave: 'janela_fim', rotulo: 'Não enviar depois de', tipo: 'hora' },
+    { chave: 'enviar_sabado', rotulo: 'Enviar aos sábados', tipo: 'simnao' },
     { chave: 'enviar_domingo', rotulo: 'Enviar aos domingos', tipo: 'simnao' },
     { chave: 'recontato_dias', rotulo: 'Recontato do lead que esfriou (dias)', tipo: 'dias' },
     { chave: 'turnos_retomar', rotulo: 'Conversa fora do assunto: respostas até a IA retomar o roteiro', tipo: 'dias' },
@@ -54,7 +55,7 @@ export const CONFIG_ROTULOS: Record<string, string> = {
 export function validarConfig(chave: string, bruto: string): string | null {
   const v = bruto.trim();
   if (['janela_inicio', 'janela_fim', 'horario_humano_inicio', 'horario_humano_fim'].includes(chave) && !/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(v)) return 'Use o formato HH:MM (ex.: 08:00).';
-  if (['enviar_domingo', 'atende_sabado', 'delete_liberado'].includes(chave) && !['true', 'false'].includes(v)) return 'Escolha sim ou não.';
+  if (['enviar_domingo', 'enviar_sabado', 'atende_sabado', 'delete_liberado'].includes(chave) && !['true', 'false'].includes(v)) return 'Escolha sim ou não.';
   if (chave.startsWith('esforco_') && !['minimal', 'low', 'medium', 'high'].includes(v)) return 'Escolha um dos níveis da lista.';
   if (chave === 'recontato_dias' && !/^[0-9]{1,3}$/.test(v)) return 'Use um número de dias (até 3 dígitos).';
   if (['turnos_retomar', 'turnos_avisar'].includes(chave) && !/^([3-9]|[1-3][0-9])$/.test(v)) return 'Use um número de 3 a 39.';
