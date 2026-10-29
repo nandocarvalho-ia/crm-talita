@@ -30,3 +30,9 @@ export async function adminUsuarios(corpo: Record<string, unknown>) {
 export async function whatsappConexao(corpo: Record<string, unknown>) {
   return chamar('whatsapp-conexao', corpo);
 }
+
+/** Senha do admin para liberar uma mudança na estrutura dos prompts (Edge Function confirmar-senha).
+ *  Devolve { aprovacao } (vale 5 minutos e uma vez só). Senha errada vira erro "Senha incorreta." */
+export async function confirmarSenha(senha: string) {
+  return chamar('confirmar-senha', { senha });
+}

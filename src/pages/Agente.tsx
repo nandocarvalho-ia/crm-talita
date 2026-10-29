@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Lock, RotateCcw, Save, History } from 'lucide-react';
+import { Lock, RotateCcw, Save, History, KeyRound } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth';
 import { dataHora } from '../lib/format';
@@ -10,6 +10,7 @@ import { Cabecalho, Erro, textoStatus } from '../components/ui';
 import ModelosIA from '../components/ModelosIA';
 import WhatsAppConexao from '../components/WhatsAppConexao';
 import Audios from '../components/Audios';
+import { Diferencas, Versoes, rotuloOrigem, useSenha } from '../components/PromptVersoes';
 
 const CAMPOS: { id: string; titulo: string; ajuda: string; livre: boolean }[] = [
   { id: 'base_conhecimento', titulo: 'Base de conhecimento', ajuda: 'O que a IA pode afirmar sobre o escritório e o direito do comprador: honorários, onde fica, como funciona o processo. O que não estiver aqui, ela não afirma.', livre: true },
@@ -27,41 +28,92 @@ const TIPOS: { id: 'agente' | 'classificador' | 'followup'; titulo: string; ajud
   { id: 'followup', titulo: 'Follow-up', ajuda: 'Como a IA escreve a mensagem de retomada a partir da conversa.' },
 ];
 
-function CampoPrompt({ tipo, campo, valor, padrao, podeEditar }: { tipo: string; campo: typeof CAMPOS[number]; valor: string; padrao: string; podeEditar: boolean }) {
+type EstadoCampo = { estrutural: boolean; igual_base: boolean; versoes: number;
+  pendente: { id: number; base_anterior: string | null; base_nova: string | null; em: string } | null };
+
+/** Resultado de uma gravação de prompt → frase para a pessoa. */
+function textoGravacao(r: any, ok: string) {
+  if (r?.status === 'ok') return r.sem_mudanca ? 'Nada mudou.' : ok;
+  if (r?.status === 'prompt_incompleto') {
+    const f: string[] = r.faltando || []; const d: string[] = r.desconhecidas || [];
+    return 'Não salvou: ' + [f.length ? `precisa continuar no texto: ${f.join(', ')}` : '', d.length ? `não existe no sistema: ${d.join(', ')}` : '']
+      .filter(Boolean).join('; ') + '.';
+  }
+  if (r?.status === 'precisa_senha') return 'Não salvou: a senha não foi confirmada.';
+  if (r?.status === 'aprovacao_invalida') return 'A confirmação da senha venceu. Tente de novo.';
+  return textoStatus(r?.status);
+}
+
+function CampoPrompt({ tipo, campo, valor, padrao, podeEditar, estado, pedirSenha }: {
+  tipo: string; campo: typeof CAMPOS[number]; valor: string; padrao: string; podeEditar: boolean;
+  estado?: EstadoCampo; pedirSenha: () => Promise<string | null>;
+}) {
+  const { admin } = useAuth();
   const qc = useQueryClient();
   const [txt, setTxt] = useState(valor);
   const [msg, setMsg] = useState('');
+  const [versoes, setVersoes] = useState(false);
+  const [verPendente, setVerPendente] = useState(false);
   useEffect(() => setTxt(valor), [valor]);
   const mudou = txt !== valor;
-  async function salvar() {
-    const { data, error } = await supabase.rpc('crm_prompt_salvar', { p_tipo: tipo, p_campo: campo.id, p_texto: txt });
-    setMsg(error ? 'Não salvou. Confira a conexão e tente de novo.' : (data as any)?.status === 'ok' ? 'Salvo. Vale a partir da próxima mensagem.' : textoStatus((data as any)?.status));
-    qc.invalidateQueries({ queryKey: ['prompts'] }); qc.invalidateQueries({ queryKey: ['historico'] });
+  const estrutural = !!estado?.estrutural;
+  const pend = estado?.pendente;
+  function atualizar() {
+    for (const k of ['prompts', 'historico', 'prompt-estado', 'prompt-versoes']) qc.invalidateQueries({ queryKey: [k] });
   }
+  // Grava; se o banco pedir a senha (parte estrutural), abre a janela e tenta de novo com a aprovação.
+  async function gravar(chamada: (ap?: string) => PromiseLike<{ data: any; error: any }>, ok: string) {
+    let { data, error } = await chamada();
+    if (!error && data?.status === 'precisa_senha') {
+      const ap = await pedirSenha();
+      if (!ap) { setMsg('Não salvou: a senha não foi confirmada.'); return; }
+      ({ data, error } = await chamada(ap));
+    }
+    setMsg(error ? 'Não salvou. Confira a conexão e tente de novo.' : textoGravacao(data, ok));
+    atualizar();
+  }
+  const salvar = () => gravar((ap) => supabase.rpc('crm_prompt_salvar', { p_tipo: tipo, p_campo: campo.id, p_texto: txt, ...(ap ? { p_aprovacao: ap } : {}) }),
+    'Salvo. Vale a partir da próxima mensagem.');
   async function restaurar() {
-    if (!confirm('Voltar este campo para o texto padrão entregue na implantação?')) return;
-    const { data } = await supabase.rpc('crm_prompt_restaurar', { p_tipo: tipo, p_campo: campo.id });
-    setMsg((data as any)?.status === 'ok' ? 'Padrão restaurado.' : textoStatus((data as any)?.status));
-    qc.invalidateQueries({ queryKey: ['prompts'] });
+    if (!confirm('Voltar esta parte para o texto da base?')) return;
+    await gravar((ap) => supabase.rpc('crm_prompt_restaurar', { p_tipo: tipo, p_campo: campo.id, ...(ap ? { p_aprovacao: ap } : {}) }), 'Voltou para a base.');
   }
+  const voltar = (id: number) => gravar((ap) => supabase.rpc('crm_prompt_voltar', { p_id: id, ...(ap ? { p_aprovacao: ap } : {}) }),
+    'Voltou para a versão escolhida. Vale a partir da próxima mensagem.');
+  const resolver = (acao: 'manter' | 'usar_base') => gravar((ap) => supabase.rpc('crm_prompt_base_resolver', { p_id: pend!.id, p_acao: acao, ...(ap ? { p_aprovacao: ap } : {}) }),
+    acao === 'manter' ? 'Ficou a sua versão.' : 'Base nova aplicada.');
   return (
     <div className="cartao p-5">
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <h3 className="font-bold">{campo.titulo}</h3>
         {!podeEditar && <span className="chip bg-papel text-apagado"><Lock className="h-3 w-3" />só administrador</span>}
-        {valor !== padrao && <span className="chip bg-sol-100 text-sol-700">alterado</span>}
+        {estrutural && podeEditar && <span className="chip bg-papel text-noite-600" title="Mudar esta parte pede a senha de login"><KeyRound className="h-3 w-3" />estrutura · pede senha</span>}
+        {valor !== padrao && <span className="chip bg-sol-100 text-sol-700">editado</span>}
+        {pend && <span className="chip bg-alerta-100 text-alerta">base nova disponível</span>}
       </div>
       {campo.ajuda && <p className="mb-2 text-xs text-apagado">{campo.ajuda}</p>}
-      <textarea className="campo font-mono text-[12.5px] leading-relaxed" aria-label={campo.titulo} rows={Math.min(24, Math.max(6, txt.split('\n').length + 1))}
-        value={txt} readOnly={!podeEditar} onChange={(e) => setTxt(e.target.value)} />
-      {podeEditar && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button className="btn-primario" disabled={!mudou} onClick={salvar}><Save className="h-4 w-4" />Salvar</button>
-          {mudou && <button className="btn-sec" onClick={() => setTxt(valor)}>Descartar</button>}
-          {valor !== padrao && <button className="btn-sec" onClick={restaurar}><RotateCcw className="h-4 w-4" />Restaurar padrão</button>}
-          <span className="text-sm text-apagado" role="status">{msg}</span>
+      {pend && (
+        <div className="mb-3 rounded-xl bg-sol-100/70 p-3 text-sm ring-1 ring-sol-300/60">
+          <p>Esta parte foi editada aqui no CRM, e a base recebeu uma atualização em {dataHora(pend.em)}. A sua versão continua valendo até alguém decidir.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button className="btn-sec !py-1.5" aria-expanded={verPendente} onClick={() => setVerPendente(!verPendente)}>{verPendente ? 'Esconder' : 'Ver o que mudou'}</button>
+            {admin && <button className="btn-sec !py-1.5" onClick={() => resolver('usar_base')}>Usar a base nova</button>}
+            {admin && <button className="btn-sec !py-1.5" onClick={() => resolver('manter')}>Manter a minha</button>}
+          </div>
+          {verPendente && <div className="mt-2"><Diferencas antes={valor} depois={pend.base_nova || ''} rotuloAntes="em uso agora" rotuloDepois="base nova" /></div>}
         </div>
       )}
+      <textarea className="campo font-mono text-[12.5px] leading-relaxed" aria-label={campo.titulo} rows={Math.min(24, Math.max(6, txt.split('\n').length + 1))}
+        value={txt} readOnly={!podeEditar} onChange={(e) => setTxt(e.target.value)} />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {podeEditar && <button className="btn-primario" disabled={!mudou} onClick={salvar}>{estrutural ? <KeyRound className="h-4 w-4" /> : <Save className="h-4 w-4" />}Salvar</button>}
+        {podeEditar && mudou && <button className="btn-sec" onClick={() => setTxt(valor)}>Descartar</button>}
+        {podeEditar && valor !== padrao && <button className="btn-sec" onClick={restaurar}><RotateCcw className="h-4 w-4" />Voltar para a base</button>}
+        <button className="btn-sec" onClick={() => setVersoes(true)}><History className="h-4 w-4" />Versões{estado?.versoes ? ` (${estado.versoes})` : ''}</button>
+        <span className="text-sm text-apagado" role="status">{msg}</span>
+      </div>
+      {versoes && <Versoes tipo={tipo} campo={campo.id} titulo={campo.titulo} atual={valor} podeVoltar={admin}
+        onVoltar={async (id) => { await voltar(id); setVersoes(false); }} onFechar={() => setVersoes(false)} />}
     </div>
   );
 }
@@ -69,36 +121,45 @@ function CampoPrompt({ tipo, campo, valor, padrao, podeEditar }: { tipo: string;
 function Prompts() {
   const { admin } = useAuth();
   const [tipo, setTipo] = useState<'agente' | 'classificador' | 'followup'>('agente');
+  const [janelaSenha, pedirSenha] = useSenha();
   const { data, isLoading, error } = useQuery({ queryKey: ['prompts'], queryFn: async () => {
     const [a, b] = await Promise.all([supabase.from('prompts').select('*'), supabase.from('prompts_padrao').select('*')]);
     if (a.error || b.error) throw a.error || b.error;
     return { atual: a.data || [], padrao: b.data || [] };
   } });
+  const { data: estado } = useQuery({ queryKey: ['prompt-estado', tipo], queryFn: async () => {
+    const { data: r } = await supabase.rpc('crm_prompt_estado', { p_tipo: tipo });
+    return ((r as any)?.campos || {}) as Record<string, EstadoCampo>;
+  } });
   const { data: hist = [] } = useQuery({ queryKey: ['historico'], queryFn: async () =>
-    (await supabase.from('prompts_historico').select('id,tipo,campo,alterado_por,alterado_em').order('id', { ascending: false }).limit(15)).data || [] });
+    (await supabase.from('prompts_historico').select('id,tipo,campo,alterado_por,alterado_em,origem').not('origem', 'in', '("inicial")').order('id', { ascending: false }).limit(15)).data || [] });
   const atual = data?.atual.find((p: any) => p.tipo === tipo) || {};
   const padrao = data?.padrao.find((p: any) => p.tipo === tipo) || {};
   // agente: as 8 seções; classificador e follow-up: só as seções que têm texto
   const campos = tipo === 'agente' ? CAMPOS : CAMPOS.filter((c) => (atual as any)[c.id] || (padrao as any)[c.id]);
   const tipos = admin ? TIPOS : TIPOS.filter((t) => t.id === 'agente');
+  const pendentes = estado ? Object.values(estado).filter((e) => e.pendente).length : 0;
   if (error) return <Erro>Não consegui carregar os prompts. Atualize a página.</Erro>;
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      {janelaSenha}
       <div className="min-w-0 space-y-4">
         <div className="flex flex-wrap items-center gap-1.5">
           {tipos.map((t) => <button key={t.id} aria-pressed={tipo === t.id} className={tipo === t.id ? 'aba-on' : 'aba-off'} onClick={() => setTipo(t.id)}>{t.titulo}</button>)}
-          <span className="ml-auto text-xs text-noite-600">Versão {(atual as any).versao || '—'} · última edição {dataHora((atual as any).atualizado_em)} por {(atual as any).atualizado_por || '—'}</span>
+          <span className="ml-auto text-xs text-noite-600">Base {(padrao as any).versao || '—'} · última edição {dataHora((atual as any).atualizado_em)} por {(atual as any).atualizado_por || '—'}</span>
         </div>
-        <p className="text-xs text-apagado">{TIPOS.find((t) => t.id === tipo)?.ajuda}</p>
+        <p className="text-xs text-apagado">{TIPOS.find((t) => t.id === tipo)?.ajuda} Toda mudança vira uma versão nova, e dá para voltar a qualquer uma. As partes marcadas com <KeyRound className="inline h-3 w-3" /> mexem na estrutura e pedem a sua senha de login.</p>
+        {pendentes > 0 && <div className="rounded-xl bg-sol-100 px-3 py-2 text-sm text-sol-700">{pendentes === 1 ? 'Uma parte tem' : `${pendentes} partes têm`} atualização da base esperando decisão. Veja abaixo.</div>}
         {isLoading && <div className="cartao p-5 text-sm text-apagado">Carregando…</div>}
         {!isLoading && !campos.length && <div className="cartao p-5 text-sm text-apagado">Este prompt ainda não foi carregado no banco.</div>}
-        {campos.map((c) => <CampoPrompt key={tipo + c.id} tipo={tipo} campo={c} valor={(atual as any)[c.id] || ''} padrao={(padrao as any)[c.id] || ''} podeEditar={admin || c.livre} />)}
+        {campos.map((c) => <CampoPrompt key={tipo + c.id} tipo={tipo} campo={c} valor={(atual as any)[c.id] || ''} padrao={(padrao as any)[c.id] || ''}
+          podeEditar={admin || (c.livre && tipo === 'agente')} estado={estado?.[c.id]} pedirSenha={pedirSenha} />)}
       </div>
       <aside className="cartao h-max p-4">
         <div className="mb-2 flex items-center gap-2 text-sm font-bold"><History className="h-4 w-4" />Últimas alterações</div>
         {!hist.length && <div className="text-xs text-apagado">Nenhuma alteração ainda.</div>}
         <ul className="space-y-2">{hist.map((h: any) => (
-          <li key={h.id} className="text-xs"><b>{CAMPOS.find((c) => c.id === h.campo)?.titulo || h.campo}</b> ({TIPOS.find((t) => t.id === h.tipo)?.titulo || h.tipo})<br /><span className="text-apagado">{dataHora(h.alterado_em)} · {h.alterado_por}</span></li>
+          <li key={h.id} className="text-xs"><b>{CAMPOS.find((c) => c.id === h.campo)?.titulo || h.campo}</b> ({TIPOS.find((t) => t.id === h.tipo)?.titulo || h.tipo})<br /><span className="text-apagado">{rotuloOrigem(h.origem)} · {dataHora(h.alterado_em)} · {h.alterado_por}</span></li>
         ))}</ul>
       </aside>
     </div>
