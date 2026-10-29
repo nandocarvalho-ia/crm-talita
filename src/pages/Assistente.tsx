@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown, ChevronRight, KeyRound, Mic, Send, Sparkles, Square, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, FileText, ImageIcon, KeyRound, Mic, Paperclip, Send, Sparkles, Square, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { assistente } from '../lib/funcoes';
 import { dataHora } from '../lib/format';
@@ -164,6 +164,34 @@ function useGravador() {
   return { gravando, iniciar, parar };
 }
 
+// anexos: imagem, PDF ou texto, até 3 por mensagem e 7 MB no total (vão em base64 para a função)
+type Arquivo = { nome: string; mime: string; base64: string; tam: number };
+const ACEITOS = 'image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv';
+const MAX_ARQ = 3, MAX_BYTES = 7 * 1024 * 1024;
+function lerBase64(f: File): Promise<string> {
+  return new Promise((ok, falha) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(',')[1] || '');
+    r.onerror = () => falha(r.error); r.readAsDataURL(f);
+  });
+}
+function mimeDe(f: File) {
+  if (f.type) return f.type.toLowerCase();
+  const ext = f.name.split('.').pop()?.toLowerCase();
+  return ext === 'pdf' ? 'application/pdf' : ext === 'csv' ? 'text/csv' : ext === 'txt' ? 'text/plain' : '';
+}
+function ListaAnexos({ itens, tirar }: { itens: { nome: string; mime: string }[]; tirar?: (i: number) => void }) {
+  if (!itens?.length) return null;
+  return (
+    <div className="mb-1.5 flex flex-wrap gap-1.5">{itens.map((a, i) => (
+      <span key={i} className="inline-flex max-w-[220px] items-center gap-1.5 rounded-lg bg-papel px-2 py-1 text-[12px] font-semibold text-noite-600 ring-1 ring-linha">
+        {String(a.mime).startsWith('image/') ? <ImageIcon className="h-3.5 w-3.5 shrink-0" /> : <FileText className="h-3.5 w-3.5 shrink-0" />}
+        <span className="truncate">{a.nome || 'arquivo'}</span>
+        {tirar && <button className="rounded text-apagado hover:text-alerta" aria-label={`Tirar ${a.nome}`} onClick={() => tirar(i)}><X className="h-3.5 w-3.5" /></button>}
+      </span>))}
+    </div>);
+}
+
 export default function Assistente() {
   const qc = useQueryClient();
   const [janelaSenha, pedirSenha] = useSenha();
@@ -179,6 +207,9 @@ export default function Assistente() {
   const [pendente, setPendente] = useState<string | null>(null);
   const [erro, setErro] = useState('');
   const [transcrevendo, setTranscrevendo] = useState(false);
+  const [arquivos, setArquivos] = useState<Arquivo[]>([]);
+  const [pendenteAnexos, setPendenteAnexos] = useState<{ nome: string; mime: string }[]>([]);
+  const seletor = useRef<HTMLInputElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const caixa = useRef<HTMLDivElement>(null);
   const grav = useGravador();
@@ -188,13 +219,29 @@ export default function Assistente() {
     descer(); const t = setTimeout(descer, 600); return () => clearTimeout(t);
   }, [msgs.length, pendente]);
 
+  async function juntar(lista: File[]) {
+    setErro('');
+    const novos: Arquivo[] = [];
+    for (const f of lista) {
+      const mime = mimeDe(f);
+      if (!ACEITOS.split(',').includes(mime)) { setErro(`"${f.name}" não dá para abrir aqui. Mande imagem, PDF ou texto.`); continue; }
+      novos.push({ nome: f.name || 'imagem colada', mime, base64: await lerBase64(f), tam: f.size });
+    }
+    setArquivos((atual) => {
+      const tudo = [...atual, ...novos];
+      if (tudo.length > MAX_ARQ) { setErro(`Até ${MAX_ARQ} arquivos por mensagem.`); return atual; }
+      if (tudo.reduce((s, a) => s + a.tam, 0) > MAX_BYTES) { setErro('Os arquivos passam de 7 MB juntos. Mande menos ou menores.'); return atual; }
+      return tudo;
+    });
+  }
   async function enviar() {
-    const t = texto.trim(); if (!t || pendente) return;
-    setErro(''); setPendente(t); setTexto('');
-    try { await assistente({ acao: 'enviar', texto: t }); }
-    catch (e) { setErro((e as Error).message); setTexto(t); }
+    const t = texto.trim(); if ((!t && !arquivos.length) || pendente) return;
+    const ax = arquivos;
+    setErro(''); setPendente(t || '(arquivo)'); setPendenteAnexos(ax.map(({ nome, mime }) => ({ nome, mime }))); setTexto(''); setArquivos([]);
+    try { await assistente({ acao: 'enviar', texto: t, ...(ax.length ? { anexos: ax.map(({ nome, mime, base64 }) => ({ nome, mime, base64 })) } : {}) }); }
+    catch (e) { setErro((e as Error).message); setTexto(t); setArquivos(ax); }
     finally {
-      setPendente(null);
+      setPendente(null); setPendenteAnexos([]);
       for (const k of ['assistente-msgs', 'assistente-uso', 'assistente-comb', 'propostas']) qc.invalidateQueries({ queryKey: [k] });
     }
   }
@@ -234,29 +281,36 @@ export default function Assistente() {
               : (
                 <div key={m.id} className={`flex ${m.papel === 'talita' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[92%] md:max-w-[80%] ${m.papel === 'talita' ? '' : 'w-full md:w-auto'}`}>
-                    <div className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[14.5px] leading-relaxed ${m.papel === 'talita' ? 'balao-eu' : 'bg-white/95 ring-1 ring-linha'}`}>{m.texto}</div>
+                    <div className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[14.5px] leading-relaxed ${m.papel === 'talita' ? 'balao-eu' : 'bg-white/95 ring-1 ring-linha'}`}>
+                      {m.papel === 'talita' && <ListaAnexos itens={m.meta?.anexos || []} />}{m.texto}</div>
                     <div className={`mt-0.5 text-[11px] text-apagado ${m.papel === 'talita' ? 'text-right' : ''}`}>{m.papel === 'assistente' ? 'Clara · ' : ''}{dataHora(m.em)}{m.canal === 'whatsapp' ? ' · WhatsApp' : ''}</div>
                     {m.papel === 'assistente' && !!m.meta?.propostas?.length && <Cartoes ids={m.meta.propostas} pedirSenha={pedirSenha} />}
                   </div>
                 </div>))}
             {pendente && <>
-              <div className="flex justify-end"><div className="balao-eu max-w-[80%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[14.5px]">{pendente}</div></div>
+              <div className="flex justify-end"><div className="balao-eu max-w-[80%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[14.5px]"><ListaAnexos itens={pendenteAnexos} />{pendente}</div></div>
               <div className="text-sm text-apagado" role="status">A Clara está pensando… pode levar até 1 minuto quando ela testa uma mudança.</div>
             </>}
             <div ref={fim} />
           </div>
           <div className="border-t border-linha bg-white/70 p-3">
             {erro && <div className="mb-2"><Erro>{erro}</Erro></div>}
+            <ListaAnexos itens={arquivos} tirar={(i) => setArquivos((a) => a.filter((_, j) => j !== i))} />
+            <input ref={seletor} type="file" multiple accept={ACEITOS} className="hidden" aria-hidden="true" tabIndex={-1}
+              onChange={(e) => { const f = Array.from(e.target.files || []); e.target.value = ''; if (f.length) juntar(f); }} />
             <div className="flex items-end gap-2">
+              <button className="btn btn-sec h-11 w-11 !px-0" aria-label="Anexar imagem ou documento" title="Anexar imagem, PDF ou texto"
+                onClick={() => seletor.current?.click()} disabled={!!pendente || arquivos.length >= MAX_ARQ}><Paperclip className="h-5 w-5" /></button>
               <textarea className="campo min-h-[44px] flex-1 resize-none" rows={Math.min(6, Math.max(1, texto.split('\n').length))} aria-label="Mensagem para a Clara"
                 placeholder={grav.gravando ? 'Gravando… toque de novo para parar' : transcrevendo ? 'Transcrevendo o áudio…' : 'Escreva para a Clara'}
                 value={texto} onChange={(e) => setTexto(e.target.value)} disabled={!!pendente}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }} />
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+                onPaste={(e) => { const f = Array.from(e.clipboardData.files || []); if (f.length) { e.preventDefault(); juntar(f); } }} />
               <button className={`btn h-11 w-11 !px-0 ${grav.gravando ? 'bg-alerta text-white' : 'btn-sec'}`} aria-label={grav.gravando ? 'Parar gravação' : 'Gravar áudio'}
                 onClick={microfone} disabled={!!pendente || transcrevendo}>{grav.gravando ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}</button>
-              <button className="btn-primario h-11 w-11 !px-0" aria-label="Enviar" onClick={enviar} disabled={!texto.trim() || !!pendente}><Send className="h-5 w-5" /></button>
+              <button className="btn-primario h-11 w-11 !px-0" aria-label="Enviar" onClick={enviar} disabled={(!texto.trim() && !arquivos.length) || !!pendente}><Send className="h-5 w-5" /></button>
             </div>
-            <p className="mt-1.5 text-[11px] text-apagado">O áudio vira texto antes de enviar, para você conferir. Nada muda sem você aprovar no cartão.</p>
+            <p className="mt-1.5 text-[11px] text-apagado">O áudio vira texto antes de enviar, para você conferir. Pode anexar imagem, PDF ou texto (até 3). Nada muda sem você aprovar no cartão.</p>
           </div>
         </section>
         <aside className="hidden h-max space-y-4 lg:block">

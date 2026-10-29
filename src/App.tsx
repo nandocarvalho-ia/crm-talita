@@ -66,25 +66,29 @@ function CartaoAgente() {
   const { data, falha, whatsOff, whatsTexto, sem } = useStatusAgente();
   const ruim = falha || whatsOff;
   return (
-    <div className={`flex flex-col gap-2.5 rounded-[18px] p-4 text-white ${ruim ? 'bg-gradient-to-br from-[#8A3B1E] to-[#5E2413]' : 'bg-gradient-to-br from-petroleo to-noite'}`}>
+    <div className={`flex shrink-0 flex-col gap-1.5 rounded-2xl px-3.5 py-3 text-white ${ruim ? 'bg-gradient-to-br from-[#8A3B1E] to-[#5E2413]' : 'bg-gradient-to-br from-petroleo to-noite'}`}>
       <div className="flex items-center gap-2 text-[13px] font-bold">
-        <span className={`h-2.5 w-2.5 rounded-full ${ruim ? 'bg-sol-300 shadow-[0_0_0_4px_rgba(214,188,108,.3)]' : 'bg-[#6FE3B8] shadow-[0_0_0_4px_rgba(111,227,184,.25)]'}`} />
-        {whatsOff ? whatsTexto : falha ? 'A IA falhou há pouco' : 'Agente no ar'}
+        <span className={`h-2 w-2 shrink-0 rounded-full ${ruim ? 'bg-sol-300 shadow-[0_0_0_3px_rgba(214,188,108,.3)]' : 'bg-[#6FE3B8] shadow-[0_0_0_3px_rgba(111,227,184,.25)]'}`} />
+        <span className="flex-1 truncate">{whatsOff ? whatsTexto : falha ? 'A IA falhou há pouco' : 'Agente no ar'}</span>
+        {!(whatsOff && admin) && (
+          <NavLink to="/conversas" aria-label="Ver conversas" title="Ver conversas"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/15 ring-1 ring-white/25 hover:bg-white/25">
+            <ArrowRight className="h-3.5 w-3.5" />
+          </NavLink>
+        )}
       </div>
-      <div className="font-display text-[16px] font-medium leading-snug">
-        {whatsOff ? 'O agente não recebe nem envia mensagens' : falha ? 'Confira os créditos da OpenAI' : 'Atendendo no WhatsApp a qualquer hora'}
-      </div>
-      <div className="text-[13px] leading-snug text-[#D3E2DA]">
+      {ruim && (
+        <div className="text-[13px] font-semibold leading-snug">
+          {whatsOff ? 'O agente não recebe nem envia mensagens' : 'Confira os créditos da OpenAI'}
+        </div>
+      )}
+      <div className="text-[12px] leading-snug text-[#D3E2DA]">
         {whatsOff ? (admin ? 'Conecte o celular pelo QR code.' : 'Avise o administrador do CRM.')
-          : data == null ? '…' : sem ? `${sem} ${sem === 1 ? 'lead está' : 'leads estão'} sem resposta.` : 'Nenhum lead ficou sem resposta nas últimas 24 h.'}
+          : data == null ? '…' : sem ? `${sem} ${sem === 1 ? 'lead está' : 'leads estão'} sem resposta.` : 'Nenhum lead sem resposta nas últimas 24 h.'}
       </div>
-      {whatsOff && admin ? (
-        <NavLink to="/agente?aba=whatsapp" className="mt-1 flex h-10 items-center justify-center gap-2 rounded-xl bg-white text-sm font-bold text-[#5E2413] hover:bg-white/90">
+      {whatsOff && admin && (
+        <NavLink to="/agente?aba=whatsapp" className="mt-1 flex h-8 items-center justify-center gap-2 rounded-lg bg-white text-[13px] font-bold text-[#5E2413] hover:bg-white/90">
           Conectar <ArrowRight className="h-4 w-4" />
-        </NavLink>
-      ) : (
-        <NavLink to="/conversas" className="mt-1 flex h-10 items-center justify-center gap-2 rounded-xl bg-white/15 text-sm font-bold ring-1 ring-white/30 hover:bg-white/20">
-          Ver conversas <ArrowRight className="h-4 w-4" />
         </NavLink>
       )}
     </div>
@@ -110,17 +114,17 @@ function MenuLateral() {
   const { usuario, sair } = useAuth();
   const itens = useItens();
   return (
-    <nav aria-label="Menu principal" className="hidden w-[232px] shrink-0 flex-col gap-2 rounded-[22px] bg-white/55 p-4 pt-6 ring-1 ring-white/90 md:flex">
-      <div className="flex justify-center px-2 pb-4"><Marca /></div>
+    <nav aria-label="Menu principal" className="hidden min-h-0 w-[232px] shrink-0 flex-col gap-2 overflow-y-auto rounded-[22px] bg-white/55 p-4 pt-6 ring-1 ring-white/90 md:flex">
+      <div className="flex justify-center px-2 pb-3"><Marca /></div>
       {itens.map(({ to, rotulo, icone: I, badge }) => (
         <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) =>
-          `flex h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] transition ${isActive ? 'bg-white font-bold text-tinta shadow-[0_2px_10px_rgba(20,45,38,.08)] [&>svg]:text-petroleo' : 'font-semibold text-noite-600 hover:bg-white/60'}`}>
+          `flex h-11 min-h-9 items-center gap-3 rounded-xl px-3.5 text-[15px] transition ${isActive ? 'bg-white font-bold text-tinta shadow-[0_2px_10px_rgba(20,45,38,.08)] [&>svg]:text-petroleo' : 'font-semibold text-noite-600 hover:bg-white/60'}`}>
           <I className="h-5 w-5" /><span className="flex-1">{rotulo}</span><Badge n={badge} />
         </NavLink>
       ))}
       <div className="flex-1" />
       <CartaoAgente />
-      <div className="mt-2 flex h-[60px] items-center gap-2.5 rounded-2xl bg-white px-2.5">
+      <div className="mt-1 flex h-[56px] shrink-0 items-center gap-2.5 rounded-2xl bg-white px-2.5">
         <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-sol-100 text-sm font-bold text-sol-700">{iniciais(usuario?.nome || usuario?.email)}</span>
         <div className="min-w-0 flex-1 leading-tight">
           <div className="truncate text-sm font-bold">{usuario?.nome || usuario?.email}</div>
