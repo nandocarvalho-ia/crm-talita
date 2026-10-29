@@ -72,7 +72,7 @@ export function useSenha(): [ReactNode, () => Promise<string | null>] {
           <h2 id="senha-titulo" className="font-bold">Confirme com a sua senha</h2>
           <button type="button" className="ml-auto rounded-full p-1 hover:bg-papel" aria-label="Cancelar" onClick={() => fechar(null)}><X className="h-4 w-4" /></button>
         </div>
-        <p className="mb-3 text-sm text-noite-600">Esta parte controla como a atendente funciona (ferramentas, passagem para a Dra., regras). Para confirmar a mudança, digite a sua senha de login do CRM.</p>
+        <p className="mb-3 text-sm text-noite-600">Esta mudança mexe na estrutura ou nas configurações da atendente (ferramentas, passagem para a Dra., regras, valores, horários). Para confirmar, digite a sua senha de login do CRM.</p>
         <label className="rotulo" htmlFor="senha-confirmar">Senha</label>
         <input id="senha-confirmar" className="campo" type="password" autoComplete="current-password" autoFocus value={senha} onChange={(e) => setSenha(e.target.value)} />
         {erro && <div className="mt-2"><Erro>{erro}</Erro></div>}

@@ -36,3 +36,8 @@ export async function whatsappConexao(corpo: Record<string, unknown>) {
 export async function confirmarSenha(senha: string) {
   return chamar('confirmar-senha', { senha });
 }
+
+/** Assistente do CRM (Edge Function assistente): { acao: 'enviar', texto } ou { acao: 'transcrever', audio, mime }. Só administrador. */
+export async function assistente(corpo: Record<string, unknown>) {
+  return chamar('assistente', corpo);
+}

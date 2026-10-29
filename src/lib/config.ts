@@ -36,6 +36,11 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
     { chave: 'telefones_internos', rotulo: 'Números da equipe que nunca viram lead (além dos que recebem aviso)', tipo: 'telefones' },
     { chave: 'delete_liberado', rotulo: '/delete zera a conversa de qualquer número (fase de testes)', ajuda: 'Desligue antes de ir ao ar: com "não", só os números de teste podem usar /delete.', tipo: 'simnao' },
   ] },
+  { titulo: 'Assistente do CRM', apoio: 'A Clara que conversa com você na aba Assistente. O custo de cada pedido é calculado pelos tokens que a OpenAI informa.', itens: [
+    { chave: 'assistente_teto_mensal', rotulo: 'Gasto máximo por mês (R$)', ajuda: 'Ao chegar, o assistente para até o mês virar. Com 80% gasto, ele avisa.', tipo: 'reais' },
+    { chave: 'assistente_limite_diario', rotulo: 'Pedidos por dia', ajuda: 'Proteção contra uso estranho.', tipo: 'dias' },
+    { chave: 'cotacao_dolar', rotulo: 'Dólar em reais (para calcular o custo)', ajuda: 'Ex.: 5.30. Atualize de vez em quando.', tipo: 'texto' },
+  ] },
   { titulo: 'Sistema', itens: [
     { chave: 'fuso', rotulo: 'Fuso horário', ajuda: 'Ex.: America/Sao_Paulo', tipo: 'texto' },
     { chave: 'uazapi_instancia', rotulo: 'Instância do WhatsApp (rótulo técnico; quem troca é a equipe técnica)', tipo: 'leitura' },
@@ -49,6 +54,7 @@ export const CONFIG_ROTULOS: Record<string, string> = {
   modelo_leitura_documento: 'Modelo da leitura de documento', modelo_followup: 'Modelo do follow-up',
   esforco_agente: 'Raciocínio da conversa', esforco_classificador: 'Raciocínio do classificador',
   esforco_leitura_documento: 'Raciocínio da leitura de documento', esforco_followup: 'Raciocínio do follow-up',
+  assistente_modelo: 'Modelo do assistente do CRM', assistente_esforco: 'Raciocínio do assistente do CRM',
 };
 
 /** Mesmo critério do crm_config_salvar. Devolve a frase do problema ou null. */
@@ -65,6 +71,9 @@ export function validarConfig(chave: string, bruto: string): string | null {
   if (chave === 'aviso_valor_alto' && !/^[0-9]{0,9}$/.test(v)) return 'Use só números, sem ponto nem vírgula, ou deixe vazio.';
   if (chave === 'feriados' && !/^([0-3][0-9]\/[01][0-9])?( *, *[0-3][0-9]\/[01][0-9])*$/.test(v)) return 'Use DD/MM separados por vírgula (ex.: 25/12, 01/01).';
   if (chave === 'prefixo_plantao' && v.length > 60) return 'No máximo 60 letras.';
+  if (chave === 'assistente_teto_mensal' && !/^[0-9]{1,5}$/.test(v)) return 'Use só números (ex.: 60).';
+  if (chave === 'assistente_limite_diario' && !/^([1-9]|[1-9][0-9]|[1-4][0-9][0-9])$/.test(v)) return 'Use um número de 1 a 499.';
+  if (chave === 'cotacao_dolar' && !/^[1-9][0-9]?([.,][0-9]{1,4})?$/.test(v)) return 'Use um valor como 5.30.';
   if (chave === 'fuso' && !/^[A-Za-z_]+\/[A-Za-z_\/]+$/.test(v)) return 'Use um fuso como America/Sao_Paulo.';
   return null;
 }

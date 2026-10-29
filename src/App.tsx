@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutGrid, KanbanSquare, MessageCircle, Bot, Users, Contact, LogOut, ArrowRight, type LucideIcon } from 'lucide-react';
+import { LayoutGrid, KanbanSquare, MessageCircle, Bot, Users, Contact, LogOut, ArrowRight, Sparkles, type LucideIcon } from 'lucide-react';
 import { useAuth } from './auth';
 import { supabase } from './lib/supabase';
 import Login from './pages/Login';
@@ -12,13 +12,24 @@ import Conversas from './pages/Conversas';
 import Agente from './pages/Agente';
 import Usuarios from './pages/Usuarios';
 import Clientes from './pages/Clientes';
+import Assistente from './pages/Assistente';
 import { Marca, iniciais } from './components/ui';
 
-type Item = { to: string; rotulo: string; curto: string; icone: LucideIcon; badge?: number };
+type Item = { to: string; rotulo: string; curto: string; icone: LucideIcon; badge?: number; soComputador?: boolean };
 
-// No celular a barra aceita até 6 itens: Áudios e WhatsApp ficam dentro de Agente.
+// Propostas do assistente esperando aprovação (selo no menu)
+function usePropostasAbertas() {
+  const { admin } = useAuth();
+  const { data } = useQuery({ queryKey: ['propostas', 'abertas'], enabled: admin, refetchInterval: 120_000, queryFn: async () =>
+    (await supabase.from('assistente_propostas').select('id', { count: 'exact', head: true }).eq('status', 'aberta')
+      .gt('criado_em', new Date(Date.now() - 7 * 86400_000).toISOString())).count || 0 });
+  return data || 0;
+}
+
+// No celular a barra aceita até 6 itens: Áudios e WhatsApp ficam dentro de Agente; o Assistente fica no topo.
 function useItens(): Item[] {
   const { admin } = useAuth();
+  const abertas = usePropostasAbertas();
   const { data: resumo } = useQuery({ queryKey: ['resumo'], queryFn: async () => (await supabase.rpc('crm_resumo')).data as any, refetchInterval: 60_000 });
   return [
     ...(admin ? [{ to: '/', rotulo: 'Visão geral', curto: 'Início', icone: LayoutGrid }] : []),
@@ -27,6 +38,7 @@ function useItens(): Item[] {
     // MÓDULOS: itens de menu de módulos entram aqui (ver references/modulos.md)
     ...(admin ? [{ to: '/clientes', rotulo: 'Clientes atuais', curto: 'Clientes', icone: Contact }] : []),
     { to: '/agente', rotulo: 'Agente', curto: 'Agente', icone: Bot },
+    ...(admin ? [{ to: '/assistente', rotulo: 'Assistente', curto: 'Clara', icone: Sparkles, badge: abertas, soComputador: true }] : []),
     ...(admin ? [{ to: '/usuarios', rotulo: 'Usuários', curto: 'Usuários', icone: Users }] : []),
   ];
 }
@@ -121,11 +133,18 @@ function MenuLateral() {
 }
 
 function TopoCelular() {
-  const { usuario, sair } = useAuth();
+  const { usuario, sair, admin } = useAuth();
+  const abertas = usePropostasAbertas();
   const [aberto, setAberto] = useState(false);
   return (
     <header className="relative flex h-16 shrink-0 items-center justify-between px-4 md:hidden">
       <Marca compacta />
+      <div className="flex-1" />
+      {admin && (
+        <NavLink to="/assistente" aria-label="Assistente" className={({ isActive }) => `relative mr-2 grid h-11 w-11 place-items-center rounded-full ${isActive ? 'bg-petroleo text-white' : 'bg-white/90 text-petroleo ring-1 ring-linha'}`}>
+          <Sparkles className="h-5 w-5" />
+          {!!abertas && <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-sol px-1 text-[10px] font-bold text-noite">{abertas > 9 ? '9+' : abertas}</span>}
+        </NavLink>)}
       <button onClick={() => setAberto(!aberto)} aria-expanded={aberto} aria-label="Conta"
         className="grid h-11 w-11 place-items-center rounded-full bg-sol-100 text-sm font-bold text-sol-700">{iniciais(usuario?.nome || usuario?.email)}</button>
       {aberto && (
@@ -139,7 +158,7 @@ function TopoCelular() {
 }
 
 function BarraCelular() {
-  const itens = useItens();
+  const itens = useItens().filter((i) => !i.soComputador);
   return (
     <nav aria-label="Menu" className="fixed inset-x-3 bottom-3 z-30 grid h-16 items-center rounded-[22px] bg-white/90 px-1 shadow-painel ring-1 ring-white backdrop-blur-lg md:hidden"
       style={{ gridTemplateColumns: `repeat(${itens.length}, minmax(0, 1fr))` }}>
@@ -179,6 +198,7 @@ export default function App() {
             {admin && <Route path="/usuarios" element={<Usuarios />} />}
             {/* MÓDULOS: rotas de módulos entram aqui, com o papel que pode ver */}
             {admin && <Route path="/clientes" element={<Clientes />} />}
+            {admin && <Route path="/assistente" element={<Assistente />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
