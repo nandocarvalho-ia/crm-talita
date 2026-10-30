@@ -247,6 +247,10 @@ function CampoConfig({ item, valor }: { item: ItemCfg; valor: string | undefined
       <option value="true">Sim</option><option value="false">Não</option>
     </select>
   );
+  else if (item.tipo === 'linhas') campo = (
+    <textarea id={id} className="campo" rows={Math.max(2, atual.split('\n').length)} value={atual}
+      onChange={(e) => { setV(e.target.value); setMsg(null); }} />
+  );
   else campo = (
     <input id={id} className={`campo ${item.tipo === 'hora' ? '!w-32' : item.tipo.startsWith('reais') || item.tipo === 'dias' ? '!w-40' : ''}`}
       value={atual} placeholder={item.tipo === 'hora' ? 'HH:MM' : undefined}

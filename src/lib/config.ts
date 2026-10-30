@@ -4,7 +4,7 @@
  * quem decide é o banco, que confere de novo e devolve `valor_invalido`.
  * Modelos e esforço de raciocínio (modelo_*, esforco_*) ficam no cartão "Modelos de IA".
  */
-export type TipoCfg = 'texto' | 'hora' | 'simnao' | 'reais' | 'reais_opcional' | 'dias' | 'telefones' | 'feriados' | 'leitura';
+export type TipoCfg = 'texto' | 'linhas' | 'hora' | 'simnao' | 'reais' | 'reais_opcional' | 'dias' | 'telefones' | 'feriados' | 'leitura';
 export type ItemCfg = { chave: string; rotulo: string; ajuda?: string; tipo: TipoCfg };
 
 export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }[] = [
@@ -13,7 +13,7 @@ export const GRUPOS_CONFIG: { titulo: string; apoio?: string; itens: ItemCfg[] }
     { chave: 'horario_humano_fim', rotulo: 'A Dra. atende até', tipo: 'hora' },
     { chave: 'atende_sabado', rotulo: 'Sábado conta como horário da Dra.', tipo: 'simnao' },
     { chave: 'feriados', rotulo: 'Dias extras sem atendimento (DD/MM, separados por vírgula)', ajuda: 'Feriados nacionais, de SP e de Franca (inclusive Carnaval, Sexta-feira Santa e Corpus Christi) já são automáticos. Use aqui só dias a mais, ex.: 24/12, 31/12.', tipo: 'feriados' },
-    { chave: 'prefixo_plantao', rotulo: 'Linha antes das mensagens do plantão (até 60 letras; vazio = nenhuma)', ajuda: 'Ex.: Atendimento · Dra. Talita', tipo: 'texto' },
+    { chave: 'prefixo_plantao', rotulo: 'Cabeçalho antes de cada resposta no plantão (até 3 linhas; vazio = nenhum)', ajuda: 'Texto entre asteriscos sai em negrito no WhatsApp. Ex.: *TCF Advogados - PLANTÃO DE ATENDIMENTO*', tipo: 'linhas' },
     { chave: 'nome_agente', rotulo: 'Nome da atendente virtual (vazio = "Clara")', tipo: 'texto' },
   ] },
   { titulo: 'Valores do caso', apoio: 'Valor já pago pelo lote. O texto do prompt também cita o valor mínimo: se mudar aqui, confira o roteiro.', itens: [
@@ -70,7 +70,7 @@ export function validarConfig(chave: string, bruto: string): string | null {
   if (['valor_minimo', 'valor_prioridade'].includes(chave) && !/^[0-9]{1,9}$/.test(v)) return 'Use só números, sem ponto nem vírgula (ex.: 10000).';
   if (chave === 'aviso_valor_alto' && !/^[0-9]{0,9}$/.test(v)) return 'Use só números, sem ponto nem vírgula, ou deixe vazio.';
   if (chave === 'feriados' && !/^([0-3][0-9]\/[01][0-9])?( *, *[0-3][0-9]\/[01][0-9])*$/.test(v)) return 'Use DD/MM separados por vírgula (ex.: 25/12, 01/01).';
-  if (chave === 'prefixo_plantao' && v.length > 60) return 'No máximo 60 letras.';
+  if (chave === 'prefixo_plantao' && (v.length > 120 || v.split('\n').length > 3)) return 'No máximo 120 letras e 3 linhas.';
   if (chave === 'assistente_teto_mensal' && !/^[0-9]{1,5}$/.test(v)) return 'Use só números (ex.: 60).';
   if (chave === 'assistente_limite_diario' && !/^([1-9]|[1-9][0-9]|[1-4][0-9][0-9])$/.test(v)) return 'Use um número de 1 a 499.';
   if (chave === 'cotacao_dolar' && !/^[1-9][0-9]?([.,][0-9]{1,4})?$/.test(v)) return 'Use um valor como 5.30.';
