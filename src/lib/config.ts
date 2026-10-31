@@ -2,7 +2,7 @@
  * Chaves da tabela `config` que aparecem em Agente → Configurações.
  * A validação abaixo repete a do crm_config_salvar (003/006) só para avisar antes de salvar:
  * quem decide é o banco, que confere de novo e devolve `valor_invalido`.
- * Modelos e esforço de raciocínio (modelo_*, esforco_*) ficam no cartão "Modelos de IA".
+ * Modelos e esforço de raciocínio (modelo_*, esforco_*, assistente_modelo, assistente_esforco) ficam no cartão "Modelos de IA".
  */
 export type TipoCfg = 'texto' | 'linhas' | 'hora' | 'simnao' | 'reais' | 'reais_opcional' | 'dias' | 'telefones' | 'feriados' | 'leitura';
 export type ItemCfg = { chave: string; rotulo: string; ajuda?: string; tipo: TipoCfg };

@@ -8,6 +8,7 @@ import { dataHora } from '../lib/format';
 import { GRUPOS_CONFIG, validarConfig, type ItemCfg } from '../lib/config';
 import { Cabecalho, Erro, textoStatus } from '../components/ui';
 import ModelosIA from '../components/ModelosIA';
+import CanaisAssistente from '../components/CanaisAssistente';
 import WhatsAppConexao from '../components/WhatsAppConexao';
 import Audios from '../components/Audios';
 import { Diferencas, Versoes, rotuloOrigem, useSenha } from '../components/PromptVersoes';
@@ -288,7 +289,7 @@ function Configuracoes() {
           </div>
           {g.itens.map((i) => <CampoConfig key={i.chave} item={i} valor={valores[i.chave]} />)}
         </section>
-      ))}
+      )).flatMap((el, i) => (GRUPOS_CONFIG[i].titulo === 'Assistente do CRM' ? [el, <CanaisAssistente key="canais-assistente" />] : [el]))}
     </div>
   );
 }

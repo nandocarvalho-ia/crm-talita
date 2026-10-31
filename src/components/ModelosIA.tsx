@@ -9,13 +9,15 @@ import { textoStatus } from './ui';
 type Modelo = { id: string; rotulo: string; descricao: string | null; raciocinio: boolean; aceita_imagem: boolean;
   preco_entrada: number | null; preco_saida: number | null; ativo: boolean; ordem: number };
 
-/** As 4 funções do agente (fn_modelos_ia). Cada uma tem modelo_<funcao> e esforco_<funcao> na config. */
-const FUNCOES: { funcao: string; titulo: string; ajuda: string; imagem?: boolean }[] = [
+/** As 4 funções do agente (fn_modelos_ia), com modelo_<funcao> e esforco_<funcao> na config, e o assistente do CRM (assistente_modelo/assistente_esforco). */
+const FUNCOES: { funcao: string; titulo: string; ajuda: string; imagem?: boolean; km?: string; ke?: string }[] = [
   { funcao: 'agente', titulo: 'Conversa com o lead', ajuda: 'Responde no WhatsApp como a Dra. Talita (ou como a equipe, no plantão).' },
   { funcao: 'classificador', titulo: 'Classificador', ajuda: 'Lê cada turno e grava os dados do caso (tipo, valor pago, parcelas, entrega…).' },
   { funcao: 'leitura_documento', titulo: 'Leitura de documento', ajuda: 'Lê a foto ou o PDF do contrato, relatório ou comprovante. Só classifica e extrai; nunca analisa.', imagem: true },
   { funcao: 'followup', titulo: 'Follow-up', ajuda: 'Escreve a mensagem de retomada a partir da conversa. Se falhar, vai o texto de reserva.' },
+  { funcao: 'assistente', titulo: 'Assistente do CRM', ajuda: 'Conversa com a administração (aba Assistente e WhatsApp), prepara mudanças e lê fotos e documentos. Padrão: GPT-6.1 Sol com raciocínio alto. O custo entra no gasto do mês do assistente.', imagem: true, km: 'assistente_modelo', ke: 'assistente_esforco' },
 ];
+const chaves = (f: { funcao: string; km?: string; ke?: string }) => [f.km || 'modelo_' + f.funcao, f.ke || 'esforco_' + f.funcao];
 
 const preco = (m: Modelo) => (m.preco_entrada == null ? '' : ` · US$ ${Number(m.preco_entrada).toFixed(2)} / ${Number(m.preco_saida ?? 0).toFixed(2)} por 1 milhão de tokens`);
 
@@ -33,7 +35,8 @@ export default function ModelosIA() {
   const [estado, setEstado] = useState<Record<string, { tipo: 'salvando' | 'ok' | 'erro'; msg: string }>>({});
 
   async function salvar(funcao: string) {
-    const pares = (['modelo_', 'esforco_'] as const).map((p) => p + funcao).filter((k) => escolha[k] !== undefined && escolha[k] !== cfg[k]);
+    const f = FUNCOES.find((x) => x.funcao === funcao)!;
+    const pares = chaves(f).filter((k) => escolha[k] !== undefined && escolha[k] !== cfg[k]);
     setEstado((s) => ({ ...s, [funcao]: { tipo: 'salvando', msg: 'Salvando…' } }));
     for (const k of pares) {
       const { data: r, error: e } = await supabase.rpc('crm_config_salvar', { p_chave: k, p_valor: escolha[k] });
@@ -49,7 +52,7 @@ export default function ModelosIA() {
   }
 
   const rotulo = (id?: string | null) => modelos.find((m) => m.id === id)?.rotulo || ESFORCOS.find(([k]) => k === id)?.[1] || id || '—';
-  const trocas = (hist as any[]).filter((h) => /^(modelo|esforco)_/.test(h.chave)).slice(0, 6);
+  const trocas = (hist as any[]).filter((h) => /^(modelo|esforco)_|^assistente_(modelo|esforco)$/.test(h.chave)).slice(0, 6);
 
   return (
     <div className="cartao max-w-3xl space-y-5 p-5">
@@ -64,7 +67,7 @@ export default function ModelosIA() {
       {error && <div className="text-sm text-alerta">Não consegui carregar a lista de modelos. Atualize a página.</div>}
 
       {FUNCOES.map((f) => {
-        const km = 'modelo_' + f.funcao, ke = 'esforco_' + f.funcao;
+        const [km, ke] = chaves(f);
         const selM = escolha[km] ?? cfg[km] ?? '';
         const selE = escolha[ke] ?? cfg[ke] ?? '';
         const opcoes = modelos.filter((m) => !f.imagem || m.aceita_imagem);
